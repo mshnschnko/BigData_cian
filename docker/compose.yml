@@ -37,4 +37,3 @@ services:
       - net
     ports:
       - "8000:8000"
-    restart: on-failure
