@@ -333,7 +333,6 @@ def parse_flats(deal_type="sale", max_pages=45):
                 "end_page": end_page,
                 "metro": "Петербургский",
                 "metro_station": station,
-                'metro_foot_minute': 15
             }
 
             url = saintp_parser.get_request_url(deal_type=deal_type, rooms=tuple(rooms),
