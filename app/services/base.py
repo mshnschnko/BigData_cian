@@ -15,6 +15,10 @@ class BaseService:
         return obj
     
     @classmethod
+    def get_all(cls, db: Session) -> list:
+        return db.query(cls.model).all()
+    
+    @classmethod
     def del_by_id(cls, db: Session, id: int) -> bool:
         obj = cls.get_by_id(db, id)
         if obj:
