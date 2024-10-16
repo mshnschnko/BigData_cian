@@ -1,6 +1,9 @@
 import time
 import logging
 
+# TODO:
+# from parser import <оформить как класс или функцию, чтобы вызывать из мейна>
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[

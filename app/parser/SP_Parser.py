@@ -390,5 +390,3 @@ rent_flats_data = parse_flats(deal_type="rent_long", max_pages=45)
 all_flats_data = {**sale_flats_data, **rent_flats_data}
 print(len(all_flats_data))
 print(all_flats_data)
-
-
