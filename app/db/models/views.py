@@ -6,7 +6,6 @@ from sqlalchemy.orm import relationship
 class ViewsORM(BaseORM):
     __tablename__ = 'views'
 
-    id = Column(Integer, primary_key=True)
     advertisement_id = Column(Integer, ForeignKey('advertisement.id'), nullable=False)
     date = Column(Date, nullable=False)
     value = Column(Integer, nullable=False)

@@ -6,7 +6,6 @@ from sqlalchemy.orm import relationship
 class AdvertisementORM(BaseORM):
     __tablename__ = 'advertisement'
 
-    id = Column(Integer, primary_key=True)
     author_id = Column(Integer, ForeignKey('author.id'), nullable=False)
     adv_type = Column(String, nullable=False) # rent_long, sale
     object_id = Column(Integer, ForeignKey('object.id'), nullable=False)
