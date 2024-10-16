@@ -15,7 +15,7 @@ class BaseService:
         return obj
     
     @classmethod
-    def get_all(cls, db: Session) -> list:
+    def get_all(cls, db: Session) -> list[model]:
         return db.query(cls.model).all()
     
     @classmethod
