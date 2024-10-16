@@ -6,7 +6,6 @@ from sqlalchemy.orm import relationship
 class ObjectORM(BaseORM):
     __tablename__ = 'object'
 
-    id = Column(Integer, primary_key=True)
     district = Column(String, nullable=False)
     underground = Column(String, nullable=False)
     street = Column(String, nullable=False)

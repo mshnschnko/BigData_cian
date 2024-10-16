@@ -6,7 +6,6 @@ from sqlalchemy.orm import relationship
 class PriceORM(BaseORM):
     __tablename__ = 'price'
 
-    id = Column(Integer, primary_key=True)
     advertisement_id = Column(Integer, ForeignKey('advertisement.id'), nullable=False)
     date = Column(Date, nullable=False)
     value = Column(Integer, nullable=False)
