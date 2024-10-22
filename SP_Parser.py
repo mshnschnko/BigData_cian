@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 
 from cianparser.constants import METRO_STATIONS
 
-
 saintp_parser = cianparser.CianParser(location="Санкт-Петербург")
 
 
@@ -24,7 +23,7 @@ def get_cian_listings_count(url):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    count_tag = soup.find('h5', class_='_93444fe79c--color_black_100--Ephi7')
+    count_tag = soup.find('h5', class_='_93444fe79c--color_text-primary-default--vSRPB _93444fe79c--lineHeight_20px--fX7_V _93444fe79c--fontWeight_bold--BbhnX _93444fe79c--fontSize_14px--reQMB _93444fe79c--display_block--KYb25 _93444fe79c--text--e4SBY _93444fe79c--text_letterSpacing__normal--tfToq')
 
     if count_tag:
         count_text = count_tag.text
@@ -62,6 +61,7 @@ def parse_flats(deal_type="sale", max_pages=45):
 
             url = saintp_parser.get_request_url(deal_type=deal_type, rooms=tuple(rooms),
                                                 accommodation_type="flat", additional_settings=additional_settings)
+            print("URL:", url)
             listings_count = get_cian_listings_count(url)
             if listings_count is None:
                 print(f"Не удалось получить количество объявлений для станции {station}. Пропускаем.")
@@ -97,7 +97,7 @@ def parse_flats_for_station(start_page, end_page, station, deal_type, room, addi
     print(f"Парсинг с {start_page}-й по {end_page}-ю страницы. room: {room}, station: {station}")
 
     flats = saintp_parser.get_flats(deal_type=deal_type, rooms=room, with_saving_csv=True,
-                                    additional_settings=additional_settings)
+                                    additional_settings=additional_settings, with_extra_data=True)
     print(f"Количество объявлений для страниц {start_page}-{end_page}: {len(flats)}")
 
     for flat in flats:
@@ -108,11 +108,10 @@ def parse_flats_for_station(start_page, end_page, station, deal_type, room, addi
     time.sleep(random.uniform(1, 15))
 
 
-sale_flats_data = parse_flats(deal_type="sale", max_pages=45)
-rent_flats_data = parse_flats(deal_type="rent_long", max_pages=45)
+if __name__ == "__main__":
+    sale_flats_data = parse_flats(deal_type="sale", max_pages=45)
+    rent_flats_data = parse_flats(deal_type="rent_long", max_pages=45)
 
-all_flats_data = {**sale_flats_data, **rent_flats_data}
-print(len(all_flats_data))
-print(all_flats_data)
-
-
+    all_flats_data = {**sale_flats_data, **rent_flats_data}
+    print(len(all_flats_data))
+    print(all_flats_data)
