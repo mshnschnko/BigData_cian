@@ -1,6 +1,4 @@
 import random
-import re
-
 import cianparser
 import time
 import requests
