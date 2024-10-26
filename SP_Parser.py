@@ -2,11 +2,24 @@ import random
 import cianparser
 import time
 import requests
-from bs4 import BeautifulSoup
+import configparser
 
+from bs4 import BeautifulSoup
 from cianparser.constants import METRO_STATIONS
 
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
 saintp_parser = cianparser.CianParser(location="Санкт-Петербург")
+
+
+def run_parser_for_deal(config_section):
+    deal_type = config[config_section]['deal_type']
+    max_pages = int(config[config_section]['max_pages'])
+    metro_line = config[config_section]['metro_line']
+
+    return parse_flats(deal_type=deal_type, max_pages=max_pages, metro_line=metro_line)
 
 
 def get_cian_listings_count(url, deal_type):
