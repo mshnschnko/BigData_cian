@@ -1,4 +1,5 @@
 import random
+import json
 import cianparser
 import time
 import requests
@@ -7,130 +8,152 @@ import configparser
 from bs4 import BeautifulSoup
 from cianparser.constants import METRO_STATIONS
 
-
+# Чтение конфигурации
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('config.ini', encoding='utf-8')
 
+# Создание парсера для Санкт-Петербурга
 saintp_parser = cianparser.CianParser(location="Санкт-Петербург")
 
 
-def run_parser_for_deal(config_section):
-    deal_type = config[config_section]['deal_type']
-    max_pages = int(config[config_section]['max_pages'])
-    metro_line = config[config_section]['metro_line']
+# Функция для сохранения данных
+def save_data(all_flats_data, filename="flats_data.json"):
+    """Сохранение данных в файл JSON."""
+    with open(filename, "w", encoding="utf-8") as file:
+        json.dump(all_flats_data, file, ensure_ascii=False, indent=4)
 
-    return parse_flats(deal_type=deal_type, max_pages=max_pages, metro_line=metro_line)
 
-
+# Функция для получения количества объявлений с сайта
 def get_cian_listings_count(url, deal_type):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
     }
-
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Проверяем статус код
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Извлечение числа объявлений
+        count_elem = soup.find('h5', class_='_93444fe79c--color_text-primary-default--vSRPB')
+        if count_elem:
+            count_text = count_elem.get_text(strip=True)
+            count = int(''.join(filter(str.isdigit, count_text)))
+            return count
+        else:
+            print("Не удалось найти элемент с количеством объявлений на странице.")
+            return None
     except requests.RequestException as e:
         print(f"Ошибка при отправке запроса: {e}")
         return None
 
-    soup = BeautifulSoup(response.content, 'html.parser')
-    with open("parsed_page3.html", "w", encoding="utf-8") as file:
-        file.write(str(soup))
-    print('deal_type:', deal_type)
 
-    count_elem = soup.find('h5',
-                           class_='_93444fe79c--color_text-primary-default--vSRPB _93444fe79c--lineHeight_20px--fX7_V _93444fe79c--fontWeight_bold--BbhnX _93444fe79c--fontSize_14px--reQMB _93444fe79c--display_block--KYb25 _93444fe79c--text--e4SBY _93444fe79c--text_letterSpacing__normal--tfToq')
-    # Проверка и извлечение числа из текста
-    if count_elem:
-        count_text = count_elem.get_text(strip=True)  # Извлекаем текст и удаляем лишние пробелы
-        count = int(''.join(filter(str.isdigit, count_text)))  # Оставляем только цифры
-        return count
-    else:
-        print("Не удалось найти количество объявлений на странице.")
-        return None
-
-
+# Основная функция для парсинга квартир
 def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
-    """
-    Парсинг объявлений с сайта Циан по продаже или аренде квартир.
-    :param metro_line:
-    :param deal_type: Тип сделки - 'sale' для продажи, 'rent_long' для аренды.
-    :param max_pages: Максимальное количество страниц для парсинга.
-    :return: Словарь всех объявлений, где ключ - это URL объявления.
-    """
     all_flats_data = {}
     rooms = [1, 2, 3, 4, 5, 'studio']
     floors = [(i, i + 1) for i in range(1, 23, 2)]
     floors.append((23, 1000))
     stations = [station[0] for station in METRO_STATIONS["Петербургский"] if station[2] == metro_line]
-    print(stations)
-    page_limit = 15  # Максимальное количество страниц в одном запросе
-    for start_page in range(1, max_pages + 1, page_limit):
-        end_page = min(start_page + page_limit - 1, max_pages)
 
-        for station in stations:
-            print('Cur station:', station)
-            additional_settings = {
-                "start_page": start_page,
-                "end_page": end_page,
-                "metro": "Петербургский",
-                "metro_station": station,
-            }
+    page_limit = 15
+    try:
+        for start_page in range(1, max_pages + 1, page_limit):
+            end_page = min(start_page + page_limit - 1, max_pages)
 
-            url = saintp_parser.get_request_url(deal_type=deal_type, rooms=tuple(rooms),
-                                                accommodation_type="flat", additional_settings=additional_settings)
-            print("URL:", url)
-            listings_count = get_cian_listings_count(url, deal_type)
-            if listings_count is None:
-                print(f"Не удалось получить количество объявлений для станции {station}. Пропускаем.")
-                continue
+            for station in stations:
+                print(f"Начало парсинга для станции {station} со страницы {start_page} по {end_page}")
+                additional_settings = {
+                    "start_page": start_page,
+                    "end_page": end_page,
+                    "metro": "Петербургский",
+                    "metro_station": station,
+                }
 
-            print(f"Количество объявлений для станции {station}: {listings_count}")
+                url = saintp_parser.get_request_url(deal_type=deal_type, rooms=tuple(rooms),
+                                                    accommodation_type="flat", additional_settings=additional_settings)
+                listings_count = get_cian_listings_count(url, deal_type)
+                if listings_count is None:
+                    print(f"Не удалось получить количество объявлений для станции {station}. Пропускаем.")
+                    continue
 
-            if listings_count > 5000:
-                for room in rooms:
-                    for floor in floors:
-                        additional_settings.update({"min_floor": floor[0], "max_floor": floor[1]})
+                print(f"Количество объявлений для станции {station}: {listings_count}")
+
+                if listings_count > 5000:
+                    for room in rooms:
+                        for floor in floors:
+                            additional_settings.update({"min_floor": floor[0], "max_floor": floor[1]})
+                            parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings,
+                                                    all_flats_data)
+                            print(f"Текущая длина all_flats_data: {len(all_flats_data)}")
+                else:
+                    for room in rooms:
                         parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings,
                                                 all_flats_data)
-            else:
-                for room in rooms:
-                    parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings,
-                                            all_flats_data)
+                        print(f"Текущая длина all_flats_data: {len(all_flats_data)}")
+
+    except Exception as e:
+        print(f"Ошибка парсинга: {e}")
+    finally:
+        save_data(all_flats_data)
+        print("Завершение работы парсинга.")
 
     return all_flats_data
 
 
+# Функция для парсинга квартир для конкретной станции метро
 def parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings, all_flats_data):
+    print(f"Парсинг для станции {station} и комнат {room} с {start_page}-й по {end_page}-ю страницы.")
+    # print('Словарь ебаный я его всё ебал:', all_flats_data)
+    try:
+        flats = saintp_parser.get_flats(deal_type=deal_type, rooms=room, with_saving_csv=True,
+                                        additional_settings=additional_settings, with_extra_data=True)
+        print(f"Количество объявлений для станции {station}, комната {room}: {len(flats)}")
+
+        for flat in flats:
+            # print('Словарь ебаный я его всё ебал:', all_flats_data)
+            url = flat.get("url")
+            print(all_flats_data)
+            if url and url not in all_flats_data:
+                # print('Словарь ебаный я его всё ебал:', all_flats_data)
+                all_flats_data[url] = flat
+
+        time.sleep(random.uniform(1, 5))  # Задержка для предотвращения блокировки
+
+    except Exception as e:
+        print(f"Ошибка при парсинге станции {station}, комната {room}: {e}")
+    finally:
+        # Сохранение данных в случае ошибки
+        if all_flats_data:  # Проверка на наличие данных
+            save_data(all_flats_data)
+        else:
+            print("Словарь all_flats_data пустой, данные не будут сохранены.")
+
+
+# Функция для запуска парсинга с определенной секцией конфигурации
+def run_parser_for_deal(config_section):
     """
-    Парсинг квартир для конкретной станции метро и диапазона страниц.
-    :param start_page: Начальная страница.
-    :param end_page: Конечная страница.
-    :param station: Станция метро.
-    :param deal_type: Тип сделки ('sale' или 'rent_long').
-    :param room: Количество комнат.
-    :param additional_settings: Дополнительные параметры для запроса.
-    :param all_flats_data: Словарь для сохранения всех данных (ключ - url).
+    Запускает парсер с параметрами, указанными в выбранной секции конфигурации.
+    :param config_section: Название секции в config.ini.
     """
-    print(f"Парсинг с {start_page}-й по {end_page}-ю страницы. room: {room}, station: {station}")
+    try:
+        deal_type = config[config_section].get('deal_type', 'sale')
+        max_pages = int(config[config_section].get('max_pages', 45))
+        metro_line = config[config_section].get('metro_line', 'Красная')
 
-    flats = saintp_parser.get_flats(deal_type=deal_type, rooms=room, with_saving_csv=True,
-                                    additional_settings=additional_settings, with_extra_data=True)
-    print(f"Количество объявлений для страниц {start_page}-{end_page}: {len(flats)}")
+        print(
+            f"Запуск парсинга для секции {config_section}: deal_type={deal_type}, max_pages={max_pages}, metro_line={metro_line}")
+        parse_flats(deal_type=deal_type, max_pages=max_pages, metro_line=metro_line)
 
-    for flat in flats:
-        url = flat.get("url")
-        if url and url not in all_flats_data:
-            all_flats_data[url] = flat
-
-    time.sleep(random.uniform(1, 15))
+    except KeyError as e:
+        print(f"Ошибка: не удалось найти ключ в конфигурации {config_section}: {e}")
 
 
+def run_parser():
+    for section in config.sections():
+        print(f"Запуск парсинга для секции: {section}")
+        run_parser_for_deal(section)
+
+
+# Запуск основного процесса для всех секций конфигурации, кроме DEFAULT
 if __name__ == "__main__":
-    sale_flats_data = parse_flats(deal_type="sale", max_pages=45, metro_line='Красная')
-    rent_flats_data = parse_flats(deal_type="rent_long", max_pages=45, metro_line='Красная')
-
-    all_flats_data = {**sale_flats_data, **rent_flats_data}
-    print(len(all_flats_data))
-    print(all_flats_data)
+    run_parser()
