@@ -112,7 +112,7 @@ def parse_flats_for_station(start_page, end_page, station, deal_type, room, addi
         for flat in flats:
             # print('Словарь ебаный я его всё ебал:', all_flats_data)
             url = flat.get("url")
-            print(all_flats_data)
+            # print(all_flats_data)
             if url and url not in all_flats_data:
                 # print('Словарь ебаный я его всё ебал:', all_flats_data)
                 all_flats_data[url] = flat
