@@ -1,1 +1,1 @@
-from .SP_Parser import proxies, saintp_parser, get_cian_listings_count, parse_flats, parse_flats_for_station
+from .SP_Parser import saintp_parser, get_cian_listings_count, parse_flats, parse_flats_for_station
