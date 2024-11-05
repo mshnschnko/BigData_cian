@@ -17,23 +17,121 @@ services:
     networks:
       - net
     ports:
-      - "5432:5432"  # Открываем порт для доступа к БД
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "postgres"]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  app:
-    build:
-      context: ../
-      dockerfile: docker/Dockerfile
-    container_name: python_app
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
-    depends_on:
-      - db
+      ZOOKEEPER_CLIENT_PORT: 2181
     networks:
       - net
     ports:
-      - "8000:8000"
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - net
+    ports:
+      - "9092:9092"
+
+  app1:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app1
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - net
+    volumes:
+      - ./configs/config1.ini:/app/parser/config.ini
+
+  app2:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app2
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - net
+    volumes:
+      - ./configs/config2.ini:/app/parser/config.ini
+
+  app3:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app3
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - net
+    volumes:
+      - ./configs/config3.ini:/app/parser/config.ini
+
+  app4:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app3
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - net
+    volumes:
+      - ./configs/config4.ini:/app/parser/config.ini
+
+  app5:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: app3
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - db
+      - kafka
+    networks:
+      - net
+    volumes:
+      - ./configs/config5.ini:/app/parser/config.ini
+
+  kafkahandler:
+    image: python:3.11
+    container_name: kafkahandler
+    environment:
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - net
