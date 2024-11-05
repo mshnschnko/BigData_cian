@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO,
 def main():
     while True:
         logging.info("I'm here!")
-        run_parser()
+        # run_parser()
         time.sleep(5)
 
 
