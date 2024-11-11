@@ -38,6 +38,7 @@ services:
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
@@ -46,13 +47,13 @@ services:
     ports:
       - "9092:9092"
 
-  app1:
+  parser1:
     build:
       context: ../
-      dockerfile: docker/Dockerfile
-    container_name: app1
+      dockerfile: /docker/Dockerfile
+    container_name: parser1
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
       KAFKA_BROKER: kafka:9092
     depends_on:
       - db
@@ -60,15 +61,15 @@ services:
     networks:
       - net
     volumes:
-      - ./configs/config1.ini:/app/parser/config.ini
+      - ./configs/config1:/app/parser/config
 
-  app2:
+  parser2:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: app2
+    container_name: parser2
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
       KAFKA_BROKER: kafka:9092
     depends_on:
       - db
@@ -76,15 +77,15 @@ services:
     networks:
       - net
     volumes:
-      - ./configs/config2.ini:/app/parser/config.ini
+      - ./configs/config2:/app/parser/config
 
-  app3:
+  parser3:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: app3
+    container_name: parser3
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
       KAFKA_BROKER: kafka:9092
     depends_on:
       - db
@@ -92,15 +93,15 @@ services:
     networks:
       - net
     volumes:
-      - ./configs/config3.ini:/app/parser/config.ini
+      - ./configs/config3:/app/parser/config
 
-  app4:
+  parser4:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: app3
+    container_name: parser4
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
       KAFKA_BROKER: kafka:9092
     depends_on:
       - db
@@ -108,15 +109,15 @@ services:
     networks:
       - net
     volumes:
-      - ./configs/config4.ini:/app/parser/config.ini
+      - ./configs/config4:/app/parser/config
 
-  app5:
+  parser5:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: app3
+    container_name: parser5
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
       KAFKA_BROKER: kafka:9092
     depends_on:
       - db
@@ -124,13 +125,15 @@ services:
     networks:
       - net
     volumes:
-      - ./configs/config5.ini:/app/parser/config.ini
+      - ./configs/config5:/app/parser/config
 
   kafkahandler:
-    image: python:3.11
+    build:
+      context: ../
+      dockerfile: kafkahandler/docker/Dockerfile
     container_name: kafkahandler
     environment:
-      KAFKA_BROKER: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - kafka
     networks:
