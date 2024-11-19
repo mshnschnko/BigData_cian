@@ -1,4 +1,3 @@
-import time
 import logging
 from parser.SP_Parser import run_parser
 
@@ -12,10 +11,7 @@ logging.basicConfig(level=logging.INFO,
 
 
 def main():
-    while True:
-        logging.info("I'm here!")
-        run_parser()
-        time.sleep(5)
+    run_parser()
 
 
 if __name__ == '__main__':

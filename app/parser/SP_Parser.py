@@ -23,7 +23,7 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 
 # Чтение конфигурации
 config = configparser.ConfigParser()
-config.read('config.ini', encoding='utf-8')
+config.read('app/parser/config.ini', encoding='utf-8')
 
 # Создание парсера для Санкт-Петербурга
 saintp_parser = cianparser.CianParser(location="Санкт-Петербург")
@@ -183,6 +183,7 @@ def run_parser_for_deal(config_section):
 
 
 def run_parser():
+    print(len(config.sections()))
     for section in config.sections():
         print(f"Запуск парсинга для секции: {section}")
         run_parser_for_deal(section)
