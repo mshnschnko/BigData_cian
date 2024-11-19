@@ -7,6 +7,19 @@ import configparser
 
 from bs4 import BeautifulSoup
 from cianparser.constants import METRO_STATIONS
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
+
+
+with open('data_proxies.txt', 'r') as file:
+    lines = [line.strip() for line in file.readlines()]
+
+ip_addresses = [line.split("//")[1].split(":")[0] for line in lines]
+
+print(ip_addresses)
 
 # Чтение конфигурации
 config = configparser.ConfigParser()
@@ -23,17 +36,33 @@ def save_data(all_flats_data, filename="flats_data.json"):
         json.dump(all_flats_data, file, ensure_ascii=False, indent=4)
 
 
-# Функция для получения количества объявлений с сайта
 def get_cian_listings_count(url, deal_type):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
-    }
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+    # Устанавливаем опции для WebDriver (например, headless режим, если нужен)
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--blink-settings=imagesEnabled=false")
+    chrome_options.page_load_strategy = 'eager'
 
-        # Извлечение числа объявлений
+    # Укажите путь к ChromeDriver
+    # service = Service('/path/to/chromedriver')  # Замените на путь к вашему ChromeDriver
+
+    try:
+        # Инициализация WebDriver
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.get(url)
+
+        # Ждём, чтобы страница успела загрузиться (можно настроить таймер или использовать WebDriverWait)
+        # time.sleep(3)  # Простой вариант с задержкой; замените на WebDriverWait при необходимости
+
+        # Получаем HTML-код страницы с помощью Selenium
+        page_content = driver.page_source
+
+        # Используем BeautifulSoup для парсинга
+        soup = BeautifulSoup(page_content, 'html.parser')
+
+        # Извлечение числа объявлений с использованием BeautifulSoup
         count_elem = soup.find('h5', class_='_93444fe79c--color_text-primary-default--vSRPB')
         if count_elem:
             count_text = count_elem.get_text(strip=True)
@@ -42,9 +71,12 @@ def get_cian_listings_count(url, deal_type):
         else:
             print("Не удалось найти элемент с количеством объявлений на странице.")
             return None
-    except requests.RequestException as e:
-        print(f"Ошибка при отправке запроса: {e}")
+    except WebDriverException as e:
+        print(f"Ошибка при работе с WebDriver: {e}")
         return None
+    finally:
+        # Закрытие браузера после завершения работы
+        driver.quit()
 
 
 # Основная функция для парсинга квартир
@@ -55,7 +87,7 @@ def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
     floors.append((23, 1000))
     stations = [station[0] for station in METRO_STATIONS["Петербургский"] if station[2] == metro_line]
 
-    page_limit = 15
+    page_limit = 12
     try:
         for start_page in range(1, max_pages + 1, page_limit):
             end_page = min(start_page + page_limit - 1, max_pages)
@@ -71,6 +103,7 @@ def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
 
                 url = saintp_parser.get_request_url(deal_type=deal_type, rooms=tuple(rooms),
                                                     accommodation_type="flat", additional_settings=additional_settings)
+                print("URL", url)
                 listings_count = get_cian_listings_count(url, deal_type)
                 if listings_count is None:
                     print(f"Не удалось получить количество объявлений для станции {station}. Пропускаем.")
@@ -84,11 +117,13 @@ def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
                             additional_settings.update({"min_floor": floor[0], "max_floor": floor[1]})
                             parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings,
                                                     all_flats_data)
+                            time.sleep(random.uniform(600, 1200))
                             print(f"Текущая длина all_flats_data: {len(all_flats_data)}")
                 else:
                     for room in rooms:
                         parse_flats_for_station(start_page, end_page, station, deal_type, room, additional_settings,
                                                 all_flats_data)
+                        time.sleep(random.uniform(600, 1200))
                         print(f"Текущая длина all_flats_data: {len(all_flats_data)}")
 
     except Exception as e:
@@ -112,12 +147,12 @@ def parse_flats_for_station(start_page, end_page, station, deal_type, room, addi
         for flat in flats:
             # print('Словарь ебаный я его всё ебал:', all_flats_data)
             url = flat.get("url")
-            print(all_flats_data)
+            # print(all_flats_data)
             if url and url not in all_flats_data:
                 # print('Словарь ебаный я его всё ебал:', all_flats_data)
                 all_flats_data[url] = flat
 
-        time.sleep(random.uniform(1, 5))  # Задержка для предотвращения блокировки
+        # time.sleep(random.uniform(1, 5))  # Задержка для предотвращения блокировки
 
     except Exception as e:
         print(f"Ошибка при парсинге станции {station}, комната {room}: {e}")
@@ -129,10 +164,9 @@ def parse_flats_for_station(start_page, end_page, station, deal_type, room, addi
             print("Словарь all_flats_data пустой, данные не будут сохранены.")
 
 
-# Функция для запуска парсинга с определенной секцией конфигурации
 def run_parser_for_deal(config_section):
     """
-    Запускает парсер с параметрами, указанными в выбранной секции конфигурации.
+    Запускает парсер с параметрами, указанными в выбранной секции конфига.
     :param config_section: Название секции в config.ini.
     """
     try:
