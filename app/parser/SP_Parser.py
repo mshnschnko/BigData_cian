@@ -87,8 +87,6 @@ def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
     rooms = [1, 2, 3, 4, 5, 'studio']
     floors = [(i, i + 1) for i in range(1, 23, 2)]
     floors.append((23, 1000))
-    for station in METRO_STATIONS["Петербургский"]:
-        print(station)
     stations = [station[0] for station in METRO_STATIONS["Петербургский"] if station[2] == metro_line]
 
     page_limit = 12
