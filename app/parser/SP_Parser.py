@@ -40,8 +40,9 @@ def save_data(all_flats_data, filename="flats_data.json"):
 def get_cian_listings_count(url, deal_type):
     # Устанавливаем опции для WebDriver (например, headless режим, если нужен)
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
+    chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--blink-settings=imagesEnabled=false")
     chrome_options.page_load_strategy = 'eager'
