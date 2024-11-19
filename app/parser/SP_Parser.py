@@ -40,8 +40,9 @@ def save_data(all_flats_data, filename="flats_data.json"):
 def get_cian_listings_count(url, deal_type):
     # Устанавливаем опции для WebDriver (например, headless режим, если нужен)
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
+    chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--blink-settings=imagesEnabled=false")
     chrome_options.page_load_strategy = 'eager'
@@ -86,6 +87,8 @@ def parse_flats(deal_type="sale", max_pages=45, metro_line='Красная'):
     rooms = [1, 2, 3, 4, 5, 'studio']
     floors = [(i, i + 1) for i in range(1, 23, 2)]
     floors.append((23, 1000))
+    for station in METRO_STATIONS["Петербургский"]:
+        print(station)
     stations = [station[0] for station in METRO_STATIONS["Петербургский"] if station[2] == metro_line]
 
     page_limit = 12
