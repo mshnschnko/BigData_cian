@@ -36,7 +36,7 @@ def save_data(all_flats_data, filename="flats_data.json"):
         json.dump(all_flats_data, file, ensure_ascii=False, indent=4)
 
 
-def get_cian_listings_count(url, deal_type):
+def get_cian_listings_count_sel(url, deal_type):
     # Устанавливаем опции для WebDriver (например, headless режим, если нужен)
     chrome_options = Options()
     # chrome_options.add_argument("--headless")  # Запуск браузера в фоновом режиме
@@ -77,6 +77,28 @@ def get_cian_listings_count(url, deal_type):
     finally:
         # Закрытие браузера после завершения работы
         driver.quit()
+
+
+def get_cian_listings_count(url, deal_type):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        # Извлечение числа объявлений
+        count_elem = soup.find('h5', class_='_93444fe79c--color_text-primary-default--vSRPB')
+        if count_elem:
+            count_text = count_elem.get_text(strip=True)
+            count = int(''.join(filter(str.isdigit, count_text)))
+            return count
+        else:
+            print("Не удалось найти элемент с количеством объявлений на странице.")
+            return None
+    except requests.RequestException as e:
+        print(f"Ошибка при отправке запроса: {e}")
+        return None
 
 
 # Основная функция для парсинга квартир
