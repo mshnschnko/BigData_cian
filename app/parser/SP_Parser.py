@@ -14,12 +14,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
 
 
-with open('data_proxies.txt', 'r') as file:
-    lines = [line.strip() for line in file.readlines()]
-
-ip_addresses = [line.split("//")[1].split(":")[0] for line in lines]
-
-print(ip_addresses)
+# with open('data_proxies.txt', 'r') as file:
+#     lines = [line.strip() for line in file.readlines()]
+#
+# ip_addresses = [line.split("//")[1].split(":")[0] for line in lines]
+#
+# print(ip_addresses)
 
 # Чтение конфигурации
 config = configparser.ConfigParser()
